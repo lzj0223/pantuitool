@@ -11,7 +11,13 @@
   "license": "ISC",
   "dependencies": {
     "@types/node": "^20.14.7",
+    "axios": "^1.7.2",
+    "tough-cookie": "^4.1.4",
     "ts-node": "^10.9.2",
+    "ts-retry-promise": "^0.8.1",
     "typescript": "^5.5.2"
+  },
+  "devDependencies": {
+    "@types/tough-cookie": "^4.0.5"
   }
 }
