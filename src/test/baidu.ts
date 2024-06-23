@@ -6,6 +6,9 @@ const cookieStr = 'XFI=9782fb02-d2f7-0d8f-3518-b0e0cb288a59; XFCS=80DE44FA6FE836
     const network = new Network(cookieStr)
     const bdstoken = await network.getBdstoken()
     console.log(bdstoken)
+
+    const dirList = await network.getDirList('/资源分享77777')
+    console.log(dirList)
 })()
 
 
