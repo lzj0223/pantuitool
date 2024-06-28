@@ -8,6 +8,12 @@ import { HEADERS, BASE_URL } from "./constants";
 import { Cookie, CookieJar } from "tough-cookie";
 import { BaiduError } from "./error";
 
+
+const SHARE_ID_REGEX = new RegExp(/\"shareid\":(\d+?),\"/)
+const USER_ID_REGEX = new RegExp(/\"share_uk\":\"(\d+?)",\"/)
+const FS_ID_REGEX = new RegExp(/\"fs_id\":(\d+?),\"/)
+
+
 /**
  * 网络请求相关类。
  * 注意，此类函数用 retry 来处理网络问题，达到重试次数则由主函数来捕获异常，中断运行。只要请求能返回数据，都可以正确处理。
@@ -87,7 +93,7 @@ export default class Network {
     try {
       const response = await this.request.get(url, { params });
       if (response.data.errno !== 0) {
-        throw new PanErrorItem(response.data.errno, "");
+        return response.data.errno;
       }
       return response.data.list;
     } catch (error) {
@@ -172,9 +178,30 @@ export default class Network {
    * @param url 网盘地址
    * @returns 返回原始请求内容，丢给 parse_response 函数取处理
    */
-  async getTransferParams(url: string): Promise<string> {
+  async getTransferParams(url: string): Promise<string | number> {
     try {
       const response = await this.request.get(url);
+
+      const content = response.data as string;
+
+      const shareid_list = content.matchAll(SHARE_ID_REGEX)
+      const user_id_list = content.matchAll(FS_ID_REGEX)
+      const fs_id_list = content.matchAll(FS_ID_REGEX)
+
+      if (!shareid_list && !user_id_list && !fs_id_list) {
+        return -1;
+      }
+
+
+      console.log([shareid_list, user_id_list, fs_id_list]);
+
+      // }); SHARE_ID_REGEX
+      // user_id_list = USER_ID_REGEX.findall(response)
+      // fs_id_list = FS_ID_REGEX.findall(response)
+      // if not all([shareid_list, user_id_list, fs_id_list]):
+      // return -1
+
+      // return [shareid_list[0], user_id_list[0], fs_id_list]
       return response.data;
     } catch (error) {
       console.error("Error in getTransferParams:", error);
@@ -257,9 +284,12 @@ export default class Network {
   }
 
   parseCookies(cookieStr: string) {
+    if (cookieStr.length <= 0) {
+      return;
+    }
     cookieStr.split(";").forEach((i) => {
       const co = Cookie.parse(i);
-      if (co === undefined) {
+      if (!co) {
         return;
       }
       this.cookieJar.setCookieSync(co, BASE_URL);

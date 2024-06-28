@@ -15,5 +15,5 @@ export interface Driver {
    * @param from 转存来的
    * @param code 提取码
    */
-  transferSave(from: string, code:string): string;
+  transferSave(from: string, code: string): Promise<string>;
 }
