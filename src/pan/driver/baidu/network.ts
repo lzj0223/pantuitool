@@ -1,3 +1,4 @@
+import { url } from 'inspector';
 import { config } from "process";
 
 /**
@@ -7,11 +8,14 @@ import axios, { AxiosInstance } from "axios";
 import { HEADERS, BASE_URL } from "./constants";
 import { Cookie, CookieJar } from "tough-cookie";
 import { BaiduError } from "./error";
+import { fsync } from 'fs';
 
 
-const SHARE_ID_REGEX = new RegExp(/\"shareid\":(\d+?),\"/)
-const USER_ID_REGEX = new RegExp(/\"share_uk\":\"(\d+?)",\"/)
-const FS_ID_REGEX = new RegExp(/\"fs_id\":(\d+?),\"/)
+const SHARE_ID_REGEX = /shareid:"(\d+?)"/g;
+const USER_ID_REGEX = new RegExp(/share_uk:"(\d+?)",/g);
+const FS_ID_REGEX = new RegExp(/fs_id:(\d+?),"/g);
+
+type TranferParams = { shareid: string, share_uk: string, files: { id: string, name: string }[], dirs: { id: string, name: string }[] }
 
 
 /**
@@ -38,7 +42,23 @@ export default class Network {
 
     this.request.interceptors.request.use((config) => {
       config.headers["Cookie"] = this.cookieJar.getCookieStringSync(BASE_URL);
+      config.headers["Content-Type"] = "application/x-www-form-urlencoded; charset=UTF-8";
+
       return config;
+    });
+
+    this.request.interceptors.response.use(resp => {
+      console.log('Response:', {
+        url: resp.config.url,
+        method: resp.config.method,
+        headers: resp.config.headers,
+        data: resp.config.data,
+        params: resp.config.params,
+        status: resp.status,
+        statusText: resp.statusText,
+        //responseData: resp.data,
+      });
+      return resp
     });
 
     this.bdstoken = "";
@@ -132,18 +152,17 @@ export default class Network {
   /**
    * 验证提取码是否正确。
    * 如果正确，则会返回转存所必须的 randsk，也就是 bdclnd 参数。
-   * @param linkUrl 网盘地址
+   * @param surl 网盘地址
    * @param passCode 提取码
    * @returns
    */
   async verifyPassCode(
-    linkUrl: string,
+    surl: string,
     passCode: string
   ): Promise<string | number> {
     const url = `${BASE_URL}/share/verify`;
     const params = {
-      // 可放心用暴力切片
-      surl: linkUrl.substring(25, 48),
+      surl: surl,
       bdstoken: this.bdstoken,
       // 当前时间的毫秒级时间戳
       t: Date.now().toString(),
@@ -151,6 +170,9 @@ export default class Network {
       channel: "chunlei",
       web: "1",
       clienttype: "0",
+      app_id: "250528",
+      logid: "",
+      "dp-logid": "",
     };
     const data = {
       pwd: passCode,
@@ -160,7 +182,15 @@ export default class Network {
     };
 
     try {
-      const response = await this.request.post(url, data, { params });
+      const response = await this.request.post(url, data, {
+        params,
+        headers: {
+          Referer: `${BASE_URL}/share/init?surl=${surl}&pwd=${passCode}`,
+        }
+      });
+
+      console.log(response.request.headers)
+      fs.write();
       if (response.data.errno !== 0) {
         return response.data.errno;
       }
@@ -175,34 +205,54 @@ export default class Network {
    * 更新 bdclnd 到 cookie 后，再次请求网盘链接，获取响应内容。
    * 请求需要允许跳转。
    * 请求不再需要提取码。
-   * @param url 网盘地址
+   * @param surl 网盘地址
    * @returns 返回原始请求内容，丢给 parse_response 函数取处理
    */
-  async getTransferParams(url: string): Promise<string | number> {
+  async getTransferParams(surl: string): Promise<number | TranferParams> {
     try {
+      // const response = await this.request.get(url);
+
+      // const content = response.data as string;
+
+      // const shareIdMatchResult = [...content.matchAll(SHARE_ID_REGEX)];
+      // const shareId = shareIdMatchResult.length > 0 ? shareIdMatchResult[0][1] : '';
+
+      // const userIdMatchResult = [...content.matchAll(USER_ID_REGEX)];
+      // const userId = userIdMatchResult.length > 0 ? userIdMatchResult[0][1] : '';
+
+      // const fsIdMatchResult = [...content.matchAll(FS_ID_REGEX)];
+      // const fsId = fsIdMatchResult.length > 0 ? fsIdMatchResult[0][1] : '';
+
+      // if (!shareId && !userId && !fsId) {
+      //   return [];
+      // }
+
+      // return [shareId, userId, fsId];
+
+      const url = `${BASE_URL}/s/1${surl}`
       const response = await this.request.get(url);
 
-      const content = response.data as string;
-
-      const shareid_list = content.matchAll(SHARE_ID_REGEX)
-      const user_id_list = content.matchAll(FS_ID_REGEX)
-      const fs_id_list = content.matchAll(FS_ID_REGEX)
-
-      if (!shareid_list && !user_id_list && !fs_id_list) {
+      const matchResult = [...response.data.matchAll(/locals\.mset\((\{.*\})\)/g)];
+      if (matchResult.length < 1) {
         return -1;
       }
 
+      const data = JSON.parse(matchResult[0][1])
+      const files: { id: string, name: string }[] = [];
+      const dirs: { id: string, name: string }[] = [];
 
-      console.log([shareid_list, user_id_list, fs_id_list]);
 
-      // }); SHARE_ID_REGEX
-      // user_id_list = USER_ID_REGEX.findall(response)
-      // fs_id_list = FS_ID_REGEX.findall(response)
-      // if not all([shareid_list, user_id_list, fs_id_list]):
-      // return -1
+      console.log(data)
+      data.file_list.forEach((element: any) => {
+        const item = { id: element.fs_id, name: element.server_filename }
+        if (element.isDir) {
+          dirs.push(item)
+        } else {
+          files.push(item)
+        }
+      });
 
-      // return [shareid_list[0], user_id_list[0], fs_id_list]
-      return response.data;
+      return { shareid: data.shareid, share_uk: data.share_uk, files, dirs }
     } catch (error) {
       console.error("Error in getTransferParams:", error);
       throw error;
@@ -216,20 +266,24 @@ export default class Network {
    * @returns 返回转存请求结果代码
    */
   async transferFile(
-    paramsList: string[],
-    folderName: string
+    paramsList: TranferParams,
+    folderName: string,
+    bdclnd: string
   ): Promise<number> {
     const url = `${BASE_URL}/share/transfer`;
     const params = {
-      shareid: paramsList[0],
-      from: paramsList[1],
+      shareid: paramsList.shareid,
+      from: paramsList.share_uk,
+      sekey: bdclnd,
+      ondup: 'newcopy',
+      async: 1,
       bdstoken: this.bdstoken,
       channel: "chunlei",
       web: "1",
       clienttype: "0",
     };
     const data = {
-      fsidlist: JSON.stringify(paramsList[2]),
+      fsidlist: JSON.stringify(paramsList.files),
       path: `/${folderName}`,
     };
 
