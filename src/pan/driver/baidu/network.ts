@@ -7,15 +7,8 @@ import { config } from "process";
 import axios, { AxiosInstance } from "axios";
 import { HEADERS, BASE_URL } from "./constants";
 import { Cookie, CookieJar } from "tough-cookie";
-import { BaiduError } from "./error";
-import { fsync } from 'fs';
 
-
-const SHARE_ID_REGEX = /shareid:"(\d+?)"/g;
-const USER_ID_REGEX = new RegExp(/share_uk:"(\d+?)",/g);
-const FS_ID_REGEX = new RegExp(/fs_id:(\d+?),"/g);
-
-type TranferParams = { shareid: string, share_uk: string, files: { id: string, name: string }[], dirs: { id: string, name: string }[] }
+type TranferParams = { shareid: string, share_uk: string, fsIds: string[], files: { id: string, name: string }[], dirs: { id: string, name: string }[] }
 
 
 /**
@@ -48,16 +41,16 @@ export default class Network {
     });
 
     this.request.interceptors.response.use(resp => {
-      console.log('Response:', {
-        url: resp.config.url,
-        method: resp.config.method,
-        headers: resp.config.headers,
-        data: resp.config.data,
-        params: resp.config.params,
-        status: resp.status,
-        statusText: resp.statusText,
-        //responseData: resp.data,
-      });
+      // console.log('Response:', {
+      //   url: resp.config.url,
+      //   method: resp.config.method,
+      //   headers: resp.config.headers,
+      //   data: resp.config.data,
+      //   params: resp.config.params,
+      //   status: resp.status,
+      //   statusText: resp.statusText,
+      //   //responseData: resp.data,
+      // });
       return resp
     });
 
@@ -164,21 +157,9 @@ export default class Network {
     const params = {
       surl: surl,
       bdstoken: this.bdstoken,
-      // 当前时间的毫秒级时间戳
-      t: Date.now().toString(),
-      // 下面是不明所以的固定参数
-      channel: "chunlei",
-      web: "1",
-      clienttype: "0",
-      app_id: "250528",
-      logid: "",
-      "dp-logid": "",
     };
     const data = {
       pwd: passCode,
-      // 并没有发现下面两个参数的用途
-      vcode: "",
-      vcode_str: "",
     };
 
     try {
@@ -188,9 +169,6 @@ export default class Network {
           Referer: `${BASE_URL}/share/init?surl=${surl}&pwd=${passCode}`,
         }
       });
-
-      console.log(response.request.headers)
-      fs.write();
       if (response.data.errno !== 0) {
         return response.data.errno;
       }
@@ -210,25 +188,6 @@ export default class Network {
    */
   async getTransferParams(surl: string): Promise<number | TranferParams> {
     try {
-      // const response = await this.request.get(url);
-
-      // const content = response.data as string;
-
-      // const shareIdMatchResult = [...content.matchAll(SHARE_ID_REGEX)];
-      // const shareId = shareIdMatchResult.length > 0 ? shareIdMatchResult[0][1] : '';
-
-      // const userIdMatchResult = [...content.matchAll(USER_ID_REGEX)];
-      // const userId = userIdMatchResult.length > 0 ? userIdMatchResult[0][1] : '';
-
-      // const fsIdMatchResult = [...content.matchAll(FS_ID_REGEX)];
-      // const fsId = fsIdMatchResult.length > 0 ? fsIdMatchResult[0][1] : '';
-
-      // if (!shareId && !userId && !fsId) {
-      //   return [];
-      // }
-
-      // return [shareId, userId, fsId];
-
       const url = `${BASE_URL}/s/1${surl}`
       const response = await this.request.get(url);
 
@@ -240,9 +199,8 @@ export default class Network {
       const data = JSON.parse(matchResult[0][1])
       const files: { id: string, name: string }[] = [];
       const dirs: { id: string, name: string }[] = [];
+      const fsIds: string[] = [];
 
-
-      console.log(data)
       data.file_list.forEach((element: any) => {
         const item = { id: element.fs_id, name: element.server_filename }
         if (element.isDir) {
@@ -250,9 +208,10 @@ export default class Network {
         } else {
           files.push(item)
         }
+        fsIds.push(item.id)
       });
 
-      return { shareid: data.shareid, share_uk: data.share_uk, files, dirs }
+      return { shareid: data.shareid, share_uk: data.share_uk, files, dirs, fsIds }
     } catch (error) {
       console.error("Error in getTransferParams:", error);
       throw error;
@@ -268,27 +227,29 @@ export default class Network {
   async transferFile(
     paramsList: TranferParams,
     folderName: string,
-    bdclnd: string
+    surl: string,
+    pwd: string
   ): Promise<number> {
     const url = `${BASE_URL}/share/transfer`;
     const params = {
       shareid: paramsList.shareid,
       from: paramsList.share_uk,
-      sekey: bdclnd,
       ondup: 'newcopy',
-      async: 1,
-      bdstoken: this.bdstoken,
-      channel: "chunlei",
-      web: "1",
-      clienttype: "0",
+      async: 1
     };
+
     const data = {
-      fsidlist: JSON.stringify(paramsList.files),
+      fsidlist: JSON.stringify(paramsList.fsIds),
       path: `/${folderName}`,
     };
 
     try {
-      const response = await this.request.post(url, data, { params });
+      const response = await this.request.post(url, data, {
+        params,
+        headers: {
+          Referer: `${BASE_URL}/s/1${surl}?pwd=${pwd}`,
+        }
+      });
       return response.data.errno;
     } catch (error) {
       console.error("Error in transferFile:", error);
