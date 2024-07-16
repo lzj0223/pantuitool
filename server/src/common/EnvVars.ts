@@ -26,14 +26,18 @@ const EnvVars = {
     Secret: (process.env.JWT_SECRET ?? ''),
     Exp: (process.env.COOKIE_EXP ?? ''), // exp at the same time as the cookie
   },
-  DB: {
-    mysql: {
-      Host: (process.env.DB_HOST ?? ''),
-      User: (process.env.DB_USER ?? ''),
-      Password: (process.env.DB_PASS ?? ''),
-      Database: (process.env.DB_NAME ?? ''),
-      Port: (Number(process.env.DB_PORT) ?? 0),
-    }
+  Mysql: {
+    Host: (process.env.DB_HOST ?? ''),
+    User: (process.env.DB_USER ?? ''),
+    Password: (process.env.DB_PASS ?? ''),
+    Database: (process.env.DB_NAME ?? ''),
+    Port: (Number(process.env.DB_PORT) ?? 0),
+  },
+  Zinsearch: {
+    Host: (process.env.ZINSEARCH_HOST ?? ''),
+    User: (process.env.ZINSEARCH_USER ?? ''),
+    Password: (process.env.ZINSEARCH_PASS ?? ''),
+    Database: (process.env.ZINSEARCH_DB_NAME ?? ''),
   }
 }
 

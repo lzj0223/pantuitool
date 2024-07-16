@@ -12,6 +12,7 @@
   "dependencies": {
     "@types/node": "^20.14.7",
     "axios": "^1.7.2",
+    "base-64": "^1.0.0",
     "tough-cookie": "^4.1.4",
     "ts-node": "^10.9.2",
     "ts-retry-promise": "^0.8.1",
