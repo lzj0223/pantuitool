@@ -20,6 +20,11 @@ interface DeleteDocumentSuccessResponse {
     message: string
 }
 
+interface MultiDocumentResponse {
+    message: string,
+    record_count: number,
+}
+
 
 interface Docoment<T> {
     _index: string;

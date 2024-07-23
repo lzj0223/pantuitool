@@ -9,7 +9,7 @@ interface SearchParams {
     max_results: number;
     sort_fields: string[];
     _source?: string[];
-    highlight?: Highlight;
+    highlight?: ZincHighlight;
 }
 
 
@@ -28,6 +28,7 @@ interface SearchResponse<S> {
 }
 
 
-export default async function search<S>(index: string, params: SearchParams): Promise<SearchResponse<S>> {
-    return await Request.post(`/api/${index}/_search`, params)
+export default async function Search<S>(index: string, params: SearchParams): Promise<SearchResponse<S>> {
+    const resp = await Request.post(`/api/${index}/_search`, params)
+    return resp.data as SearchResponse<S>
 }

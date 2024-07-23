@@ -37,7 +37,7 @@ const EnvVars = {
     Host: (process.env.ZINSEARCH_HOST ?? ''),
     User: (process.env.ZINSEARCH_USER ?? ''),
     Password: (process.env.ZINSEARCH_PASS ?? ''),
-    Database: (process.env.ZINSEARCH_DB_NAME ?? ''),
+    Index: (process.env.ZINSEARCH_INDEX ?? ''),
   }
 }
 

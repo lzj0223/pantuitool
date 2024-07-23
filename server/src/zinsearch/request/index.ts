@@ -22,7 +22,9 @@ class HttpClient {
         this.token = base64.encode(`${EnvVars.Zinsearch.User}:${EnvVars.Zinsearch.Password}`);
         this.http.interceptors.request.use(
             (config) => {
-                config.headers['Content-Type'] = 'application/json';
+                if (!config.headers['Content-Type']) {
+                    config.headers['Content-Type'] = 'application/json';
+                }
                 config.headers["Authorization"] = `Basic ${this.token}`;
                 return config;
             }
