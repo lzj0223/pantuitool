@@ -27,11 +27,11 @@ const EnvVars = {
     Exp: (process.env.COOKIE_EXP ?? ''), // exp at the same time as the cookie
   },
   Mysql: {
-    Host: (process.env.DB_HOST ?? ''),
+    Host: (process.env.DB_HOST ?? '127.0.0.1'),
     User: (process.env.DB_USER ?? ''),
     Password: (process.env.DB_PASS ?? ''),
     Database: (process.env.DB_NAME ?? ''),
-    Port: (Number(process.env.DB_PORT) ?? 0),
+    Port: (Number(process.env.DB_PORT) ?? 3306),
   },
   Zinsearch: {
     Host: (process.env.ZINSEARCH_HOST ?? ''),

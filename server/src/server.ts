@@ -2,16 +2,16 @@ import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import path from 'path';
 import helmet from 'helmet';
-import express, { Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import logger from 'jet-logger';
 import 'express-async-errors';
 
-import BaseRouter from './routes';
-import Paths from './common/Paths';
+import routers from './routes';
 import EnvVars from './common/EnvVars';
 import HttpStatusCodes from './common/HttpStatusCodes';
-import RouteError from './common/RouteError';
+import RouteError from './routes/RouteError';
 import { NodeEnvs } from './common/misc';
+import Mysql from './repos/Mysql';
 
 const app = express();
 const viewsDir = path.join(__dirname, 'views');
@@ -32,22 +32,35 @@ if (EnvVars.NodeEnv === NodeEnvs.Production.valueOf()) {
 }
 
 // Routes
-app.use(Paths.Base, BaseRouter);
+routers.forEach((item) => {
+  app.use(item.getBasePath(), item.getRouter());
+});
 
-app.get('/', (_: Request, res: Response) => res.redirect('/users'));
-app.get('/users', (_: Request, res: Response) => res.sendFile('users.html', { root: viewsDir }));
+
+// 404 处理器
+app.use((req: Request, res: Response) => {
+  res.status(404).json({ code: 404, msg: 'Not Found' });
+});
 
 // Error handler
-app.use((err: Error, req: Request, res: Response) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
   if (EnvVars.NodeEnv !== NodeEnvs.Test.valueOf()) {
     logger.err(err, true);
   }
-
-  const status = err instanceof RouteError ? err.status : HttpStatusCodes.BAD_REQUEST;
-  res.status(status).json({ error: err.message });
+  const code = err instanceof RouteError ? err.code : HttpStatusCodes.BAD_REQUEST;
+  res.status(code).json({ code, msg: err.message });
 });
 
 // Views setup
 app.set('views', viewsDir);
 
-export default app;
+const server = async () => {
+  await Mysql.initialize()
+
+  const SERVER_START_MSG = ('Express server started on port: ' +
+    EnvVars.Port.toString());
+
+  app.listen(EnvVars.Port, () => logger.info(SERVER_START_MSG));
+}
+export default server;
