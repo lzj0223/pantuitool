@@ -1,7 +1,7 @@
 import RouteError from '@src/routes/RouteError';
-import HttpStatusCodes from '@src/common/HttpStatusCodes';
+import HttpStatusCodes from '@src/core/common/HttpStatusCodes';
 
-import UserRepo from '@src/repos/UserRepo';
+import UserRepo from '@src/core/db/UserRepo';
 import { IUser } from '@src/models/User';
 
 

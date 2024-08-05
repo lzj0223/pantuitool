@@ -1,6 +1,6 @@
 
 import '../../pre-start';
-import zinsearch from "../../zinsearch";
+import zinsearch from "../../core/zinsearch";
 
 
 interface DocFile {

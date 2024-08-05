@@ -1,7 +1,7 @@
 
-import RouteError from '../../routes/RouteError';
-import HttpStatusCodes from '../../common/HttpStatusCodes';
-import { ControllerMethod } from '../../routes/AppRouter';
+import RouteError from '../../core/router/RouteError';
+import HttpStatusCodes from '../../core/common/HttpStatusCodes';
+import { ControllerMethod } from '../../core/router/AppRouter';
 import { Request } from 'express';
 
 

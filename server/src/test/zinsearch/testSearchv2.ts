@@ -1,5 +1,5 @@
 import '../../pre-start';
-import zinsearch from "../../zinsearch";
+import zinsearch from "../../core/zinsearch";
 
 zinsearch.Searchv2('pantuitool_files', {
     from: 0,

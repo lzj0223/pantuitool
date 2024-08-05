@@ -1,5 +1,5 @@
 // **** Types **** //
-import zinsearch from '../../zinsearch';
+import zinsearch from '../../core/zinsearch';
 
 
 const INDEX = 'pan_share_files';

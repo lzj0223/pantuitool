@@ -7,11 +7,11 @@ import logger from 'jet-logger';
 import 'express-async-errors';
 
 import routers from './routes';
-import EnvVars from './common/EnvVars';
-import HttpStatusCodes from './common/HttpStatusCodes';
-import RouteError from './routes/RouteError';
-import { NodeEnvs } from './common/misc';
-import Mysql from './repos/Mysql';
+import EnvVars from './core/common/EnvVars';
+import HttpStatusCodes from './core/common/HttpStatusCodes';
+import RouteError from './core/router/RouteError';
+import { NodeEnvs } from './core/common/misc';
+import Mysql from './core/db/Mysql';
 
 const app = express();
 const viewsDir = path.join(__dirname, 'views');

@@ -1,6 +1,6 @@
 import { AxiosError } from 'axios';
 import '../../pre-start';
-import zinsearch from "../../zinsearch";
+import zinsearch from "../../core/zinsearch";
 
 const config: IZIndex = {
     "name": "pan_share_files",

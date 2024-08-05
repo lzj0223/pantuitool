@@ -5,9 +5,9 @@ import insertUrlParams from 'inserturlparams';
 
 import app from '@src/server';
 
-import UserRepo from '@src/repos/UserRepo';
+import UserRepo from '@src/core/db/UserRepo';
 import User, { IUser } from '@src/models/User';
-import HttpStatusCodes from '@src/common/HttpStatusCodes';
+import HttpStatusCodes from '@src/core/common/HttpStatusCodes';
 import { USER_NOT_FOUND_ERR } from '@src/services/UserService';
 
 import Paths from 'spec/support/Paths';
@@ -40,24 +40,24 @@ describe('UserRouter', () => {
   describe(`"GET:${Paths.Users.Get}"`, () => {
 
     // Setup API
-    const api = (cb: TApiCb) => 
+    const api = (cb: TApiCb) =>
       agent
         .get(Paths.Users.Get)
         .end(apiCb(cb));
 
     // Success
-    it('should return a JSON object with all the users and a status code ' + 
-    `of "${HttpStatusCodes.OK}" if the request was successful.`, (done) => {
-      // Add spy
-      const data = getDummyUsers();
-      spyOn(UserRepo, 'getAll').and.resolveTo(data);
-      // Call API
-      api(res => {
-        expect(res.status).toBe(HttpStatusCodes.OK);
-        expect(res.body).toEqual({ users: data });
-        done();
+    it('should return a JSON object with all the users and a status code ' +
+      `of "${HttpStatusCodes.OK}" if the request was successful.`, (done) => {
+        // Add spy
+        const data = getDummyUsers();
+        spyOn(UserRepo, 'getAll').and.resolveTo(data);
+        // Call API
+        api(res => {
+          expect(res.status).toBe(HttpStatusCodes.OK);
+          expect(res.body).toEqual({ users: data });
+          done();
+        });
       });
-    });
   });
 
   // Test add user
@@ -67,35 +67,35 @@ describe('UserRouter', () => {
       DUMMY_USER = getDummyUsers()[0];
 
     // Setup API
-    const callApi = (user: IUser | null, cb: TApiCb) => 
+    const callApi = (user: IUser | null, cb: TApiCb) =>
       agent
         .post(Paths.Users.Add)
         .send({ user })
         .end(apiCb(cb));
 
     // Test add user success
-    it(`should return a status code of "${HttpStatusCodes.CREATED}" if the ` + 
-    'request was successful.', (done) => {
-      // Spy
-      spyOn(UserRepo, 'add').and.resolveTo();
-      // Call api
-      callApi(DUMMY_USER, res => {
-        expect(res.status).toBe(HttpStatusCodes.CREATED);
-        done();
+    it(`should return a status code of "${HttpStatusCodes.CREATED}" if the ` +
+      'request was successful.', (done) => {
+        // Spy
+        spyOn(UserRepo, 'add').and.resolveTo();
+        // Call api
+        callApi(DUMMY_USER, res => {
+          expect(res.status).toBe(HttpStatusCodes.CREATED);
+          done();
+        });
       });
-    });
 
     // Missing param
-    it(`should return a JSON object with an error message of "${ERROR_MSG}" ` + 
-    `and a status code of "${HttpStatusCodes.BAD_REQUEST}" if the user ` + 
-    'param was missing.', (done) => {
-      // Call api
-      callApi(null, res => {
-        expect(res.status).toBe(HttpStatusCodes.BAD_REQUEST);
-        expect(res.body.error).toBe(ERROR_MSG);
-        done();
+    it(`should return a JSON object with an error message of "${ERROR_MSG}" ` +
+      `and a status code of "${HttpStatusCodes.BAD_REQUEST}" if the user ` +
+      'param was missing.', (done) => {
+        // Call api
+        callApi(null, res => {
+          expect(res.status).toBe(HttpStatusCodes.BAD_REQUEST);
+          expect(res.body.error).toBe(ERROR_MSG);
+          done();
+        });
       });
-    });
   });
 
   // Update users
@@ -105,82 +105,82 @@ describe('UserRouter', () => {
       DUMMY_USER = getDummyUsers()[0];
 
     // Setup API
-    const callApi = (user: IUser | null, cb: TApiCb) => 
+    const callApi = (user: IUser | null, cb: TApiCb) =>
       agent
         .put(Paths.Users.Update)
         .send({ user })
         .end(apiCb(cb));
 
     // Success
-    it(`should return a status code of "${HttpStatusCodes.OK}" if the ` + 
-    'request was successful.', (done) => {
-      // Setup spies
-      spyOn(UserRepo, 'update').and.resolveTo();
-      spyOn(UserRepo, 'persists').and.resolveTo(true);
-      // Call api
-      callApi(DUMMY_USER, res => {
-        expect(res.status).toBe(HttpStatusCodes.OK);
-        done();
+    it(`should return a status code of "${HttpStatusCodes.OK}" if the ` +
+      'request was successful.', (done) => {
+        // Setup spies
+        spyOn(UserRepo, 'update').and.resolveTo();
+        spyOn(UserRepo, 'persists').and.resolveTo(true);
+        // Call api
+        callApi(DUMMY_USER, res => {
+          expect(res.status).toBe(HttpStatusCodes.OK);
+          done();
+        });
       });
-    });
 
     // Param missing
     it(`should return a JSON object with an error message of "${ERROR_MSG}" ` +
-    `and a status code of "${HttpStatusCodes.BAD_REQUEST}" if the user ` + 
-    'param was missing.', (done) => {
-      // Call api
-      callApi(null, res => {
-        expect(res.status).toBe(HttpStatusCodes.BAD_REQUEST);
-        expect(res.body.error).toBe(ERROR_MSG);
-        done();
+      `and a status code of "${HttpStatusCodes.BAD_REQUEST}" if the user ` +
+      'param was missing.', (done) => {
+        // Call api
+        callApi(null, res => {
+          expect(res.status).toBe(HttpStatusCodes.BAD_REQUEST);
+          expect(res.body.error).toBe(ERROR_MSG);
+          done();
+        });
       });
-    });
 
     // User not found
-    it('should return a JSON object with the error message of ' + 
-    `"${USER_NOT_FOUND_ERR}" and a status code of ` + 
-    `"${HttpStatusCodes.NOT_FOUND}" if the id was not found.`, (done) => {
-      // Call api
-      callApi(DUMMY_USER, res => {
-        expect(res.status).toBe(HttpStatusCodes.NOT_FOUND);
-        expect(res.body.error).toBe(USER_NOT_FOUND_ERR);
-        done();
+    it('should return a JSON object with the error message of ' +
+      `"${USER_NOT_FOUND_ERR}" and a status code of ` +
+      `"${HttpStatusCodes.NOT_FOUND}" if the id was not found.`, (done) => {
+        // Call api
+        callApi(DUMMY_USER, res => {
+          expect(res.status).toBe(HttpStatusCodes.NOT_FOUND);
+          expect(res.body.error).toBe(USER_NOT_FOUND_ERR);
+          done();
+        });
       });
-    });
   });
 
   // Delete User
   describe(`"DELETE:${Paths.Users.Delete}"`, () => {
 
     // Call API
-    const callApi = (id: number, cb: TApiCb) => 
+    const callApi = (id: number, cb: TApiCb) =>
       agent
         .delete(insertUrlParams(Paths.Users.Delete, { id }))
         .end(apiCb(cb));
 
     // Success
-    it(`should return a status code of "${HttpStatusCodes.OK}" if the ` + 
-    'request was successful.', (done) => {
-      // Setup spies
-      spyOn(UserRepo, 'delete').and.resolveTo();
-      spyOn(UserRepo, 'persists').and.resolveTo(true);
-      // Call api
-      callApi(5, res => {
-        expect(res.status).toBe(HttpStatusCodes.OK);
-        done();
+    it(`should return a status code of "${HttpStatusCodes.OK}" if the ` +
+      'request was successful.', (done) => {
+        // Setup spies
+        spyOn(UserRepo, 'delete').and.resolveTo();
+        spyOn(UserRepo, 'persists').and.resolveTo(true);
+        // Call api
+        callApi(5, res => {
+          expect(res.status).toBe(HttpStatusCodes.OK);
+          done();
+        });
       });
-    });
 
     // User not found
-    it('should return a JSON object with the error message of ' + 
-    `"${USER_NOT_FOUND_ERR}" and a status code of ` + 
-    `"${HttpStatusCodes.NOT_FOUND}" if the id was not found.`, done => {
-      // Setup spies
-      callApi(-1, res => {
-        expect(res.status).toBe(HttpStatusCodes.NOT_FOUND);
-        expect(res.body.error).toBe(USER_NOT_FOUND_ERR);
-        done();
+    it('should return a JSON object with the error message of ' +
+      `"${USER_NOT_FOUND_ERR}" and a status code of ` +
+      `"${HttpStatusCodes.NOT_FOUND}" if the id was not found.`, done => {
+        // Setup spies
+        callApi(-1, res => {
+          expect(res.status).toBe(HttpStatusCodes.NOT_FOUND);
+          expect(res.body.error).toBe(USER_NOT_FOUND_ERR);
+          done();
+        });
       });
-    });
   });
 });

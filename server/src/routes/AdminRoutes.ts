@@ -1,6 +1,6 @@
 // src/routes/userRoutes.ts
 import * as LoginController from '../controllers/admin/LoginController';
-import { AppRouter } from './AppRouter';
+import { AppRouter } from '../core/router/AppRouter';
 
 
 
